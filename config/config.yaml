@@ -1,0 +1,18 @@
+# Sample sheet with one row per sample and links to the raw reads on ENA
+samples: config/samples.tsv
+
+# Test mode only keeps the first part of each FASTQ file.
+# This lets you run the whole pipeline on a laptop in about 20 minutes.
+# Set it to false to download and use every read (about 25 GB of data).
+test_mode: true
+test_read_pairs: 2000000
+
+# Human transcript sequences from GENCODE, used to build the Salmon index
+transcriptome_url: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_48/gencode.v48.transcripts.fa.gz
+
+# Number of CPU cores each heavy step may use
+threads: 4
+
+# Cutoffs used to call a gene differentially expressed
+padj_cutoff: 0.05
+log2fc_cutoff: 1

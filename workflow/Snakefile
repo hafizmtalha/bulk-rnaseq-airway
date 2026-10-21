@@ -1,0 +1,19 @@
+import pandas as pd
+
+configfile: "config/config.yaml"
+
+SAMPLES = pd.read_csv(config["samples"], sep="\t").set_index("sample", drop=False)
+
+
+rule all:
+    input:
+        "results/multiqc/multiqc_report.html",
+        "results/deseq2/deseq2_results.tsv",
+        "results/plots/volcano.png",
+        "results/gsea/hallmark_gsea.tsv",
+
+
+include: "rules/download.smk"
+include: "rules/qc.smk"
+include: "rules/quant.smk"
+include: "rules/analysis.smk"

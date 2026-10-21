@@ -1,0 +1,26 @@
+name: bulk-rnaseq-airway
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.12.15
+  - snakemake-minimal=9.27.1
+  - pandas=3.0.6
+  - fastp=1.4.0
+  - salmon=2.8.0
+  - multiqc=1.35
+  - pigz=2.8
+  - r-base=4.5.3
+  - bioconductor-deseq2=1.50.2
+  - bioconductor-tximport=1.38.2
+  - bioconductor-apeglm=1.32.0
+  - bioconductor-fgsea=1.36.2
+  - r-msigdbr=26.1.1
+  - r-ggplot2=4.0.3
+  - r-ggrepel=0.9.8
+  - r-pheatmap=1.0.13
+  - r-rcolorbrewer=1.1_3
+  - r-dplyr=1.2.1
+  - r-readr=2.2.0
+  - r-tibble=3.3.1
+  - r-tidyr=1.3.2
