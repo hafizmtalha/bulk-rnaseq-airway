@@ -48,9 +48,9 @@ Everything is joined together with Snakemake, so it knows which steps to rerun w
 
 ## Two ways to run it
 
-**Test mode (the default).** The pipeline streams only the first 2 million read pairs of each sample. This needs about 2 GB of downloads and finishes in around 20 to 30 minutes on a laptop. It is enough to find the main dexamethasone genes. The figures in this README come from test mode.
+**Test mode (the default).** The pipeline streams only the first 2 million read pairs of each sample. This needs about 2 GB of downloads and finishes in around 20 to 30 minutes on a laptop. It is enough to find the main dexamethasone genes, and it is the best way to check that everything works.
 
-**Full mode.** Every read is used, which means about 25 GB of downloads. Turn it on by setting `test_mode: false` in `config/config.yaml`, or from the command line:
+**Full mode.** Every read is used, which means about 25 GB of downloads. The results and figures in this README come from full mode. On a home connection the whole run took several hours, and most of that time was spent downloading. If the connection drops, the download step picks up where it stopped. Turn it on by setting `test_mode: false` in `config/config.yaml`, or from the command line:
 
 ```bash
 snakemake --cores 8 --config test_mode=False
@@ -58,15 +58,15 @@ snakemake --cores 8 --config test_mode=False
 
 ## Results
 
-Results below are from test mode (2 million read pairs per sample).
+Results below are from full mode, with every read (16 to 33 million read pairs per sample).
 
 ### 1. Read quality and mapping
 
-fastp found good quality reads with very little adapter in them. Salmon mapped about 95 to 96% of fragments in every sample, which is very high and shows the libraries are clean. All of these numbers are collected in `results/multiqc/multiqc_report.html`.
+fastp found good quality reads with very little adapter in them. Salmon mapped 95 to 96% of fragments in every sample, which is very high and shows the libraries are clean. All of these numbers are collected in `results/multiqc/multiqc_report.html`.
 
 ### 2. Sample level checks
 
-Before looking at single genes, it is worth checking that samples group the way we expect. On the PCA, the first component (39% of the variance) splits every treated sample from every control. The second component mostly separates the cell lines, especially N080611. This tells us two things. The treatment has a big, clear effect, and the cell lines differ from each other too. That is why the model includes cell line.
+Before looking at single genes, it is worth checking that samples group the way we expect. On the PCA, the first component (34% of the variance) splits every treated sample from every control. The second component mostly separates the cell lines, especially N080611. This tells us two things. The treatment has a big, clear effect, and the cell lines differ from each other too. That is why the model includes cell line.
 
 ![PCA](docs/figures/pca.png)
 
@@ -76,7 +76,7 @@ Before looking at single genes, it is worth checking that samples group the way 
 
 DESeq2 was run with the design `~ cell_line + condition`. This compares treated and control cells within the same person, which removes the differences between people from the test. Fold changes were shrunk with apeglm, so genes with few reads do not get huge, noisy fold changes.
 
-Out of 11,610 genes that passed the expression filter, **333 genes** changed by more than 2 fold with an adjusted p value below 0.05. Of these, **207 went up** and **126 went down**.
+Out of 17,949 genes that passed the expression filter, **749 genes** changed by more than 2 fold with an adjusted p value below 0.05. Of these, **414 went up** and **335 went down**. If we drop the fold change cutoff, 3,659 genes change by some amount. Steroids touch a large part of the genome, but most of those changes are small.
 
 ![MA plot](docs/figures/ma_plot.png)
 
@@ -84,14 +84,16 @@ The top genes are well known targets of the glucocorticoid receptor, the protein
 
 | Gene | log2 fold change | What it is |
 |---|---|---|
-| FKBP5 | +3.7 | Classic steroid response gene. Often used as a marker that a steroid is working |
-| TSC22D3 (GILZ) | +3.2 | Switches off inflammation, a key part of how steroids calm the airway |
-| DUSP1 | +2.8 | Turns off inflammatory signalling inside the cell |
-| KLF15 | +5.1 | Known steroid target in airway smooth muscle |
-| ZBTB16 | +6.2 | One of the most strongly induced steroid genes in many tissues |
+| FKBP5 | +4.0 | Classic steroid response gene. Often used as a marker that a steroid is working |
+| TSC22D3 (GILZ) | +3.1 | Switches off inflammation, a key part of how steroids calm the airway |
+| DUSP1 | +3.0 | Turns off inflammatory signalling inside the cell |
+| KLF15 | +4.4 | Known steroid target in airway smooth muscle |
+| ZBTB16 | +6.4 | One of the most strongly induced steroid genes in many tissues |
 | CRISPLD2 | +2.6 | Highlighted by Himes et al. as a new asthma related steroid target |
-| PER1 | +2.3 | Body clock gene that responds directly to steroids |
-| CXCL12 | −1.9 | A chemokine that draws in immune cells. Pushed down by the steroid |
+| PER1 | +2.9 | Body clock gene that responds directly to steroids |
+| CXCL12 | −1.8 | A chemokine that draws in immune cells. Pushed down by the steroid |
+
+ZBTB16 is the most significant gene of all. Other genes near the top of the list include SAMHD1, MAOA, SERPINA3, GPX3, SPARCL1 and MT2A. All of them are known to go up with steroids.
 
 ![Top genes](docs/figures/top_genes_counts.png)
 
@@ -101,13 +103,15 @@ Each line in the plot above joins the control and treated sample from one cell l
 
 ### 4. Pathways
 
-For gene set enrichment, every tested gene is ranked by how strongly and in which direction it changed. fgsea then checks whether the genes in each hallmark pathway sit near the top or the bottom of that list. Androgen response and adipogenesis lead the list. Both make sense, because the androgen and glucocorticoid receptors share many target genes, and steroids are known to push cells toward fat related programs. In test mode the signal is still weak and no pathway passes an adjusted p value of 0.05. A full mode run gives much stronger results.
+For gene set enrichment, every tested gene is ranked by how strongly and in which direction it changed. fgsea then checks whether the genes in each hallmark pathway sit near the top or the bottom of that list. Adipogenesis comes out on top and is the only pathway with an adjusted p value below 0.05. This makes sense, since steroids are known to push cells toward fat related programs. Fatty acid metabolism, androgen response and TNF alpha signalling come next, but they do not pass the cutoff. The androgen and glucocorticoid receptors share many target genes, so the androgen result fits too.
+
+The pathway signal is modest. That is not a surprise. Only four pairs of samples were used, and the hallmark sets are broad. Many of the strongest steroid genes, such as ZBTB16 and FKBP5, are not in any single hallmark set. The gene level results above are the main story of this data.
 
 ![Hallmark GSEA](docs/figures/hallmark_gsea.png)
 
 ## How to run it
 
-You need [conda](https://docs.conda.io) or [mamba](https://mamba.readthedocs.io), an internet connection and about 10 GB of free disk space for test mode (most of it is the Salmon index).
+You need [conda](https://docs.conda.io) or [mamba](https://mamba.readthedocs.io), an internet connection and about 10 GB of free disk space for test mode (most of it is the Salmon index). Full mode needs about 60 GB.
 
 ```bash
 git clone https://github.com/hafizmtalha/bulk-rnaseq-airway.git

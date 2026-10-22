@@ -23,7 +23,14 @@ rule download_fastq:
             set +o pipefail
             curl -sL {params.url} | gzip -dc 2> /dev/null | head -n {params.lines} | gzip > {output} 2> {log}
         else
-            curl -L --retry 5 -o {output} {params.url} 2> {log}
+            # Big files can drop halfway. Keep a partial file and resume it.
+            for attempt in 1 2 3 4 5 6 7 8 9 10; do
+                if curl -L --retry 5 --retry-all-errors -C - -o {output}.part {params.url} 2>> {log}; then
+                    break
+                fi
+                sleep 30
+            done
+            mv {output}.part {output}
         fi
         gzip -t {output}
         """
